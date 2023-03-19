@@ -15,11 +15,13 @@ bnn(
 )
 }
 \arguments{
-\item{x}{A vector for categoricals, for class types of samples, ordered from the closest by distance to the target for prediction}
+\item{x}{A vector for categorical values, for class types of samples, ordered from the closest by distance to the target for prediction}
 
 \item{alpha, beta}{The prior probablities for Beta distributions}
 
 \item{p_gamma}{Proablity of streak extension, ie, not a breakpoint at the next position of the ordered samples}
+
+\item{class1}{The category in \code{x} for which the posterior probablities will be calculated}
 
 \item{weights}{Weights for each sample;
 \itemize{

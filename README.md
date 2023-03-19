@@ -21,7 +21,8 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(BKNN)
-## basic example code
+dat <- matrix() # a data set with 10 samples
+bnn_res <- calc_bnn(dat, target_sample = colnames(dat)[1:3])
 ```
 
 ## Reference

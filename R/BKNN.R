@@ -3,9 +3,10 @@
 #' @description
 #' Implementation of Nuti G's Algorithm for Bayesian Nearest Neighbours (see references) in R
 #'
-#' @param x A vector for categoricals, for class types of samples, ordered from the closest by distance to the target for prediction
+#' @param x A vector for categorical values, for class types of samples, ordered from the closest by distance to the target for prediction
 #' @param alpha,beta The prior probablities for Beta distributions
 #' @param p_gamma Proablity of streak extension, ie, not a breakpoint at the next position of the ordered samples
+#' @param class1 The category in `x` for which the posterior probablities will be calculated
 #' @param weights Weights for each sample; 
 #'  - If `NA`, estimate weights using `get_sample_weight` from the input `x`;
 #'  - If `NULL`, estimate weights using `get_sample_weight` from the input `x`;
@@ -90,32 +91,44 @@ bnn <- function(x, alpha=10, beta=10, p_gamma = 0.05, class1=x[1], weights = NUL
 
 #' Bayesian Nearest Neighours for a data matrix
 #' @param data a matrix to calculate sample distance from, with columns corresponding to samples. Example: principle components for samples
-#' @param sample_info a data.frame for sample information, with one of the columns named as "Name" for sample names or sample IDs, which should be corresponding to `data` column names. If sa
-#' @param target_sample the name(s)/ID(s) of the targeted samples for which BNN posteriors will be calculated
+#' @param sample_info a data.frame for sample information, columns corresponding to those of `dat`
+#' @param query the name(s)/ID(s) of the samples for which BNN posteriors will be calculated
+#' @param target the name(s)/ID(s) of the samples with which BNN posteriors will be calculated
+#' @param k the maximum number of nearest neighours to be considered. Smaller `k` increases speed at the possible cost of missing info when remote samples are also predictive
 #' @param alpha,beta The prior probablities for Beta distributions
 #' @param p_gamma Proablity of streak extension, ie, not a breakpoint at the next position of the ordered samples
 #' @param bnn_name either `NULL` or a string to name the columns of returned data.frame
 #' @param strata For stratified weights, provide strata groups for samples. Weights will be calculate per group if provided. Default: NULL, not stratified
 #'  - when `strata` is column name of the `sample_info` data.frame, the corresponding column will be used as `strata`
+#' @param bnn_name either `NULL` or a string to name the columns of returned data.frame
+#' @param sample_col the column name for sample names/IDs
+#' @param status_col the column name for sample status, which is used in BNN prediction
+#' @param class1 The category for which the posterior probablities will be calculated; See the `class1` argument of function `bnn`
 #' @return Bayesian Nearest Neighours results
 #'  - if `bnn_name` is `NULL`, returns a vector of Bayesian posterior probablities for each sample
 #'  - if `bnn_name` is provided as a string, resturns a data.frame, with columns corresponding to the posterior probablities, and the most likely change points (`chngpnt`), with columns names as `paste0(c("bnn", "chngpnt), bnn_name)`
 #' @import FNN
 #' @export
-get.bnn <- function(dat, sample_info, target_sample = sample_info$Name, k=200, alpha = 10, beta = 10, p_gamma = 0.05, bnn_name = NULL, strata = NULL){ #{{{
+calc_bnn <- function(dat, sample_info, query = NULL, target = NULL, k=200, alpha = 10, beta = 10, p_gamma = 0.05, bnn_name = NULL, strata = NULL, sample_col = "Name", status_col = "gender", class1 = "MALE"){ #{{{
    library(FNN)
-    n_target <- length(target_sample)
-    n_query <- nrow(sample_info)
-    ph_target <- sample_info[match(target_sample, sample_info$Name),,drop=FALSE]
-    k <- min(k, n_query)
-    dat.query <- t(dat[, sample_info$Name, drop = FALSE])
-    dat.target <- t(dat[, target_sample, drop = FALSE])
+    samples <- sample_info[[name_col]]
+    if(is.null(query)) query <- samples
+    if(is.null(target)) target <- samples
+    i_query <- match(query, samples)
+    i_target <- match(target, samples)
+    n_query <- nrow(query)
+    n_target <- length(target)
+    k <- min(k, n_target)
+    x <- sample_info[[status_col]][i_target]
+
+    dat.query <- t(dat[, i_query, drop = FALSE])
+    dat.target <- t(dat[, i_target, drop = FALSE])
     nn.index <- get.knnx(dat.target, dat.query, k = k)$nn.index
 
-    if(length(strata) == 1 && strata %in% colnames(sample_info)) strata <- ph_target[[strata]]
-    weights <-  get_sample_weight(ph_target$gender, strata = strata)
-    nn.gender <- matrix(ph_target$gender[nn.index], ncol=ncol(nn.jndex))
-    bnn.ret <- lapply(1:nrow(nn.gender), function(x) bnn(nn.gender[x,] , alpha = alpha, beta = beta, p_gamma = p_gamma, class1 = "MALE", weights = weights[nn.index[x,]]))
+    if(length(strata) == 1 && strata %in% colnames(sample_info)) strata <- sample_info[[strata]][i_target]
+    weights <-  get_sample_weight(x, strata = strata)
+    nn.gender <- matrix(x[nn.index], ncol=ncol(nn.index))
+    bnn.ret <- lapply(1:nrow(nn.gender), function(x) bnn(nn.gender[x,] , alpha = alpha, beta = beta, p_gamma = p_gamma, class1 = class1, weights = weights[nn.index[x,]]))
     bnn_pp <- sapply(bnn.ret, function(x) x$posterior)
     # bnn.ret <- apply(nn.gender, 1, function(x) bnn(x , alpha = alpha, beta = beta, p_gamma = p_gamma, class1 = "MALE")$posterior)
     if(is.null(bnn_name)) {
