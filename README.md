@@ -5,7 +5,7 @@
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The goal of BKNN is to implement the Baysian k-Nearest Neighbhors algorithm in R.
+The goal of BKNN is to implement the Bayesian k-Nearest Neighbors algorithm in R.
 
 ## Installation
 
@@ -17,13 +17,13 @@ devtools::install_github("wuwill/BKNN")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
-
 ``` r
 library(BKNN)
-dat <- matrix() # a data set with 10 samples
-bnn_res <- calc_bnn(dat, target_sample = colnames(dat)[1:3])
+dat <- cbind(matrix(rnorm(30, 0), ncol = 5),
+        matrix(rnorm(30, 2), ncol = 5))
+sample_info <- data.frame(Name = paste0("I", 1:10), gender = rep(c("MALE", "FEMALE"), each = 5))
+bnn_res <- calc_bnn(dat, sample_info, query = sample_info$Name, target = sample_info$Name, sample_col = "Name", status_col = "gender", class1 = "MALE")
 ```
 
 ## Reference
-Nuti G. An efficient algorithm for bayesian nearest neighbours. Methodology and Computing in Applied Probability. 2019 Dec;21(4):1251-8.
+Nuti G. An efficient algorithm for Bayesian nearest neighbours. Methodology and Computing in Applied Probability. 2019 Dec;21(4):1251-8.

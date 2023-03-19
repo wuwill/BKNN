@@ -111,7 +111,7 @@ bnn <- function(x, alpha=10, beta=10, p_gamma = 0.05, class1=x[1], weights = NUL
 #' @export
 calc_bnn <- function(dat, sample_info, query = NULL, target = NULL, k=200, alpha = 10, beta = 10, p_gamma = 0.05, bnn_name = NULL, strata = NULL, sample_col = "Name", status_col = "gender", class1 = "MALE"){ #{{{
    library(FNN)
-    samples <- sample_info[[name_col]]
+    samples <- sample_info[[sample_col]]
     if(is.null(query)) query <- samples
     if(is.null(target)) target <- samples
     i_query <- match(query, samples)
